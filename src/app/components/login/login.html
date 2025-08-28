@@ -1,0 +1,40 @@
+<div class="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md animate-fade-in">
+  <h1 class="text-3xl font-bold text-center mb-6">Login to Matrix</h1>
+  
+  @if (errorMessage) {
+    <div class="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-center">
+      {{ errorMessage }}
+    </div>
+  }
+
+  <form (ngSubmit)="login()" class="space-y-4">
+    <div>
+      <label for="userId" class="block mb-2 text-sm font-medium text-gray-400">User ID</label>
+      <input 
+        type="text" 
+        id="userId" 
+        [(ngModel)]="loginData.userId" 
+        name="userId"
+        placeholder="@user:matrix.org"
+        class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required>
+    </div>
+    <div>
+      <label for="password" class="block mb-2 text-sm font-medium text-gray-400">Password</label>
+      <input 
+        type="password" 
+        id="password" 
+        [(ngModel)]="loginData.password" 
+        name="password"
+        class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required>
+    </div>
+    
+    <button 
+      type="submit" 
+      [disabled]="isLoading"
+      class="w-full p-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed">
+      {{ isLoading ? 'Logging in...' : 'Login' }}
+    </button>
+  </form>
+</div>
