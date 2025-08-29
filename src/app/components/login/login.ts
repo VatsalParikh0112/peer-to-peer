@@ -1,4 +1,3 @@
-// src/app/login/login.component.ts
 import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -11,7 +10,7 @@ import { MatrixClient } from 'matrix-js-sdk';
   imports: [CommonModule, FormsModule],
   templateUrl: './login.html',
 })
-export class LoginComponent {
+export class Login {
   @Output() loginSuccess = new EventEmitter<MatrixClient>();
 
   loginData = { homeserver: 'https://matrix.org', userId: '', password: '' };
@@ -24,11 +23,12 @@ export class LoginComponent {
     this.isLoading = true;
     this.errorMessage = '';
     try {
-      const client = this.matrixService.initializeClient(this.loginData.homeserver);
+      this.matrixService.initializeClient(this.loginData.homeserver);
       await this.matrixService.loginWithPassword(this.loginData.userId, this.loginData.password);
-      this.loginSuccess.emit(client);
+      this.loginSuccess.emit(this.matrixService.client);
     } catch (error: any) {
       this.errorMessage = 'Login failed. Please check your credentials.';
+    } finally {
       this.isLoading = false;
     }
   }

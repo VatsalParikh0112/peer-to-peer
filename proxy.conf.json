@@ -1,0 +1,7 @@
+{
+  "/_matrix": {
+    "target": "https://matrix.org",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

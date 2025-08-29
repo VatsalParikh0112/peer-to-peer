@@ -1,7 +1,6 @@
-// src/app/services/matrix.service.ts
 import { Injectable } from '@angular/core';
 import * as matrixcs from 'matrix-js-sdk';
-import { MatrixClient, Room, IndexedDBStore, MemoryStore } from 'matrix-js-sdk';
+import { MatrixClient, Room, MemoryStore } from 'matrix-js-sdk';
 import { Subject } from 'rxjs';
 
 @Injectable({
@@ -10,37 +9,62 @@ import { Subject } from 'rxjs';
 export class MatrixService {
   public client!: MatrixClient;
   public incomingCall$ = new Subject<any>();
+  private homeserverUrl = '';
 
   constructor() { }
 
-  initializeClient(homeserverUrl: string): MatrixClient {
-    // This logic correctly handles all browser environments
-    const isIndexedDbSupported = !!window.indexedDB;
-    console.log("Is IndexedDB supported?", isIndexedDbSupported);
+  /**
+   * Initialize client with homeserver URL (pre-login)
+   */
+  initializeClient(homeserverUrl: string): void {
+    console.log("Forcing MemoryStore to avoid all storage errors.");
+    this.homeserverUrl = homeserverUrl;
 
     this.client = matrixcs.createClient({
       baseUrl: homeserverUrl,
-      // Use IndexedDB for persistent storage, but fall back to MemoryStore if it's blocked.
-      store: isIndexedDbSupported ? new IndexedDBStore({
-        indexedDB: window.indexedDB,
-        dbName: 'matrix-video-call-store',
-      }) : new MemoryStore(),
+      store: new MemoryStore(),
     });
 
     this.client.on('Call.incoming' as any, (call: any) => {
       this.incomingCall$.next(call);
     });
-    
-    return this.client;
   }
-  
+
+  /**
+   * Login with password and re-create authenticated client
+   */
   async loginWithPassword(userId: string, password: string) {
-    return this.client.login('m.login.password', { user: userId, password: password });
+    const loginResponse = await this.client.login('m.login.password', {
+      user: userId,
+      password: password,
+    });
+
+    console.log("Login success:", loginResponse);
+
+    // Recreate authenticated client with deviceId + accessToken
+    this.client = matrixcs.createClient({
+      baseUrl: this.homeserverUrl,
+      accessToken: loginResponse.access_token,
+      userId: loginResponse.user_id,
+      deviceId: loginResponse.device_id,
+      store: new MemoryStore(),
+    });
+
+    // Reattach incoming call listener
+    this.client.on('Call.incoming' as any, (call: any) => {
+      this.incomingCall$.next(call);
+    });
+
+    return loginResponse;
   }
 
   async logout() {
     if (this.client) {
-      await this.client.logout();
+      try {
+        await this.client.logout();
+      } catch (e) {
+        console.warn("Logout error:", e);
+      }
       this.client.stopClient();
       await this.client.clearStores();
     }
@@ -55,18 +79,56 @@ export class MatrixService {
     });
   }
 
-  async placeCallByRoomId(roomId: string) {
-    const room = this.client.getRoom(roomId);
-    if (!room) {
-      console.error(`Error: You don't appear to be a member of the room ${roomId}`);
+  async placeCallByUserId(targetUserId: string) {
+    let roomId: string | undefined;
+    const existingRoom = this.findDirectRoomWithUser(targetUserId);
+
+    if (existingRoom) {
+      roomId = existingRoom.roomId;
+    } else {
+      try {
+        const createRoomResponse = await this.client.createRoom({
+          is_direct: true,
+          invite: [targetUserId],
+        });
+        roomId = createRoomResponse.room_id;
+      } catch (error) {
+        console.error("Failed to create room:", error);
+        return null;
+      }
+    }
+
+    if (!roomId) {
+      console.error("Could not find or create a room ID to place the call.");
       return null;
     }
 
-    console.log(`Placing call directly in room ${roomId}`);
     const call = matrixcs.createNewMatrixCall(this.client, roomId);
     if (call) {
       call.placeVideoCall();
     }
     return call;
+  }
+
+  async placeCallByRoomId(roomId: string) {
+    try {
+      const call = matrixcs.createNewMatrixCall(this.client, roomId);
+      if (call) {
+        call.placeVideoCall();
+        return call;
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to place call in room:", error);
+      return null;
+    }
+  }
+
+  private findDirectRoomWithUser(userId: string): Room | undefined {
+    const rooms = this.client.getRooms();
+    return rooms.find(r => {
+      const members = r.getJoinedMembers();
+      return members.length === 2 && members.some(m => m.userId === userId);
+    });
   }
 }

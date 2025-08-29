@@ -1,30 +1,51 @@
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center font-sans p-4">
-
   @if (isLoggedIn) {
-    <div class="bg-gray-800 p-8 rounded-xl shadow-lg w-full max-w-md text-center">
-      <button (click)="logout()" class="absolute top-4 right-4 text-sm text-gray-400 hover:text-white" title="Logout">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-        </svg>
-      </button>
+    <div class="bg-gray-800 p-6 sm:p-8 rounded-xl shadow-lg w-full max-w-md">
+      <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl sm:text-3xl font-bold">Matrix P2P Caller 🤙</h1>
+        <button (click)="logout()" class="text-sm text-gray-400 hover:text-white">Logout</button>
+      </div>
+      <p class="text-center text-gray-400 text-sm mb-6">{{ statusMessage }}</p>
 
-      @if (activeCall) {
+      <!-- Incoming Call Prompt -->
+      @if (incomingCall) {
+        <div class="space-y-4 text-center">
+          <p class="text-lg">Incoming Call</p>
+          <button 
+            (click)="acceptCall()"
+            class="w-full p-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold">
+            Accept
+          </button>
+          <button 
+            (click)="rejectCall()"
+            class="w-full p-3 bg-red-600 hover:bg-red-700 rounded-lg font-semibold">
+            Reject
+          </button>
+        </div>
+      }
+      <!-- Active Call -->
+      @else if (activeCall) {
         <app-call 
           [callObject]="activeCall" 
           (callEnded)="onCallEnded()">
         </app-call>
-      } @else {
-        <h1 class="text-2xl font-bold mb-6">Ready to Call</h1>
-        <p class="text-gray-400 mb-8">Click the button below to start the video call.</p>
-        <button 
-          (click)="startCall()"
-          class="w-full p-4 bg-green-600 hover:bg-green-700 rounded-lg font-semibold text-lg transition-colors">
-          Start Video Call 🚀
-        </button>
+      }
+      <!-- Call Start Form -->
+      @else {
+        <div class="space-y-4">
+          <input 
+            #roomIdInput 
+            placeholder="Enter Room ID to call (e.g., !room:matrix.org)" 
+            class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <button 
+            (click)="startCall(roomIdInput.value)"
+            class="w-full p-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors">
+            Start Video Call
+          </button>
+        </div>
       }
     </div>
   } @else {
     <app-login (loginSuccess)="onLoginSuccess()"></app-login>
   }
-
 </body>

@@ -1,4 +1,3 @@
-// src/app/call/call.component.ts
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -6,18 +5,19 @@ import { CommonModule } from '@angular/common';
   selector: 'app-call',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: `./call.html`
+  templateUrl: './call.html'
 })
-export class CallComponent implements OnInit, OnDestroy {
+export class Call implements OnInit, OnDestroy {
   @Input({ required: true }) callObject: any;
   @Output() callEnded = new EventEmitter<void>();
   @ViewChild('localVideo') localVideo!: ElementRef<HTMLVideoElement>;
   @ViewChild('remoteVideo') remoteVideo!: ElementRef<HTMLVideoElement>;
 
   ngOnInit() {
+    if (!this.callObject) return;
     this.callObject.on('feeds_changed', this.handleFeedsChanged);
     this.callObject.on('hangup', this.handleHangup);
-    this.handleFeedsChanged(this.callObject.feeds);
+    this.handleFeedsChanged(this.callObject.feeds ?? []);
   }
   
   handleFeedsChanged = (feeds: any[]) => {
@@ -32,6 +32,7 @@ export class CallComponent implements OnInit, OnDestroy {
   hangup = () => this.callObject.hangup();
 
   ngOnDestroy() {
+    if (!this.callObject) return;
     this.callObject.removeListener('feeds_changed', this.handleFeedsChanged);
     this.callObject.removeListener('hangup', this.handleHangup);
   }
