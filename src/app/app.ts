@@ -25,7 +25,7 @@ export class App {
     await this.matrixService.start();
     this.statusMessage = `Ready to call. Logged in as ${this.matrixService.client.getUserId()}`;
 
-    this.matrixService.incomingCall$.subscribe(call => {
+    this.matrixService.incomingCall.subscribe(call => {
       console.log("Incoming call...");
       this.incomingCall = call; // Store incoming call
       this.statusMessage = "Incoming call...";

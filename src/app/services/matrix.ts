@@ -8,7 +8,7 @@ import { Subject } from 'rxjs';
 })
 export class MatrixService {
   public client!: MatrixClient;
-  public incomingCall$ = new Subject<any>();
+  public incomingCall = new Subject<any>();
   private homeserverUrl = '';
 
   constructor() { }
@@ -26,36 +26,45 @@ export class MatrixService {
     });
 
     this.client.on('Call.incoming' as any, (call: any) => {
-      this.incomingCall$.next(call);
+      this.incomingCall.next(call);
     });
   }
 
   /**
    * Login with password and re-create authenticated client
    */
-  async loginWithPassword(userId: string, password: string) {
-    const loginResponse = await this.client.login('m.login.password', {
-      user: userId,
-      password: password,
-    });
+  async loginWithPassword(userId: string, password: string): Promise<any> {
+    try {
+      const loginResponse = await this.client.login('m.login.password', {
+        user: userId,
+        password: password,
+      });
 
-    console.log("Login success:", loginResponse);
+      console.log("Login success:", loginResponse);
 
-    // Recreate authenticated client with deviceId + accessToken
-    this.client = matrixcs.createClient({
-      baseUrl: this.homeserverUrl,
-      accessToken: loginResponse.access_token,
-      userId: loginResponse.user_id,
-      deviceId: loginResponse.device_id,
-      store: new MemoryStore(),
-    });
+      this.client = matrixcs.createClient({
+        baseUrl: this.homeserverUrl,
+        accessToken: loginResponse.access_token,
+        userId: loginResponse.user_id,
+        deviceId: loginResponse.device_id,
+        store: new MemoryStore(),
+      });
 
-    // Reattach incoming call listener
-    this.client.on('Call.incoming' as any, (call: any) => {
-      this.incomingCall$.next(call);
-    });
+      this.client.on('Call.incoming' as any, (call: any) => {
+        this.incomingCall.next(call);
+      });
 
-    return loginResponse;
+      return loginResponse;
+
+    } catch (err: any) {
+      if (err.httpStatus === 429) {
+        const retry = err.data?.retry_after_ms || 5000;
+        console.warn(`Rate limited. Retrying after ${retry}ms`);
+        await new Promise(res => setTimeout(res, retry));
+        return this.loginWithPassword(userId, password); // retry once
+      }
+      throw err;
+    }
   }
 
   async logout() {
