@@ -8,7 +8,7 @@ import { Login } from './components/login/login';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, Call , Login],
+  imports: [CommonModule, FormsModule, Call, Login],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
@@ -27,24 +27,24 @@ export class App {
 
     this.matrixService.incomingCall.subscribe(call => {
       console.log("Incoming call...");
-      this.incomingCall = call; // Store incoming call
+      this.incomingCall = call;
       this.statusMessage = "Incoming call...";
     });
   }
 
-  async startCall(roomId: string) {
-    if (!roomId || !this.isLoggedIn) {
-      this.statusMessage = "Please enter a Room ID.";
+  async startCall(userId: string) {
+    if (!userId || !this.isLoggedIn) {
+      this.statusMessage = "Please enter a Matrix user ID.";
       return;
     }
 
-    this.statusMessage = `Attempting to call in room ${roomId}...`;
-    this.activeCall = await this.matrixService.placeCallByRoomId(roomId);
+    this.statusMessage = `Attempting to call ${userId}...`;
+    this.activeCall = await this.matrixService.callUserDirectly(userId);
 
     if (this.activeCall) {
-      this.statusMessage = `Calling in room ${roomId}...`;
+      this.statusMessage = `Calling ${userId}...`;
     } else {
-      this.statusMessage = `Could not place call. Are you a member of that room?`;
+      this.statusMessage = `Could not place call to ${userId}.`;
     }
   }
 

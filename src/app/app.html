@@ -34,11 +34,11 @@
       @else {
         <div class="space-y-4">
           <input 
-            #roomIdInput 
-            placeholder="Enter Room ID to call (e.g., !room:matrix.org)" 
+            #userIdInput 
+            placeholder="Enter Matrix User ID (e.g., @alice:matrix.org)" 
             class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <button 
-            (click)="startCall(roomIdInput.value)"
+            (click)="startCall(userIdInput.value)"
             class="w-full p-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors">
             Start Video Call
           </button>
